@@ -1,4 +1,4 @@
-<a href="http://wiki.openvz.org/Main_Page" target=_"blank">OpenVZ</a> is a great virtualization tool for Linux servers.  I've repeatedly run up against various resource limits, which can sometimes lead to really weird errors like 'cannot allocate memory' when you do something awful like <bash>ls -l</bash>.  I cooked up the following script to keep a log file of times when a server overruns its bounds.  I can then either raise the limits, or try to correlate the overrun time to something going on at that time.  Read more for the full details.
+OpenVZ is a great virtualization tool for Linux servers, but not the friendliest to configure.  I've repeatedly run up against various resource limits, which can sometimes lead to really weird errors like 'cannot allocate memory' when you do something awful like 'ls -l'.  I cooked up the following script to keep a log file of times when a server overruns its bounds.  I can then either raise the limits, or try to correlate the overrun time to something going on at that time.
 
 The script will examine the /proc/user_beancounters file and print any 'failcnt' values which have changed since the last run.  Set up a cron job every minute (or whatever frequency you like), and redirect output to get an easy failure log.
 
@@ -7,7 +7,5 @@ The script will examine the /proc/user_beancounters file and print any 'failcnt'
 It doesn't track how long it's been since the last run, which you'd need for calculating failures/second or some other rate.  I'm working on the assumption that these failures should be fairly rare, and you're most interested in the fact that they're happening at all.
 
 Some possible enhancements:
-<ul>
- <li>Script this to run from the host OS (via <bash>vzctl enter</bash>) rather than the guest.</li>
- <li>Add syslog or other logging facilities in addition to stdout.</li>
-</ul>
+ * Run from the host OS rather than the guest.
+ * Add syslog or other logging facilities in addition to stdout.
