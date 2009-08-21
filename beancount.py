@@ -15,6 +15,7 @@ class CounterResetError( Exception ):
 
 # read a user_beancounters file, and return a {'key':'failcnt'} dict.
 def get_beancounter_failcnt( filename ):
+  container = "unknown"
   values = {}
   fp = open( filename )
   for line in fp:
@@ -22,8 +23,13 @@ def get_beancounter_failcnt( filename ):
     size = len( arr )
     # most rows have 6 cols.  row which includes container id has 7
     # skip Version, header, and dummy rows
+
+    if size == 7 and arr[ -6 ] != 'resource' :
+      container = arr[ -7 ]
+
     if ( size == 6 or size == 7 ) and arr[ -6 ] != 'resource' and arr[ -6 ] != 'dummy':
-      values[ arr[ -6 ] ] = arr[ -1 ]
+      values[ container + arr[ -6 ] ] = arr[ -1 ]
+
   return values
 
 # compare 2 dicts created by get_beancounter_failcnt.
