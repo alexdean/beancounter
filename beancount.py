@@ -17,7 +17,7 @@ class CounterResetError( Exception ):
 class VzList:
   def __init__( self, input='' ):
     if input == '':
-      input = subprocess.Popen( [ "vzlist" ], stdout=subprocess.PIPE ).communicate()[ 0 ]
+      input = subprocess.Popen( [ "/usr/sbin/vzlist" ], stdout=subprocess.PIPE ).communicate()[ 0 ]
     lines = [ line.split() for line in input.split( "\n" ) ]
     self.map = dict( [ ( line[0], line[4] ) for line in lines if len( line ) == 5 ] )
 
