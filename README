@@ -7,5 +7,4 @@ The script will examine the /proc/user_beancounters file and print any 'failcnt'
 It doesn't track how long it's been since the last run, which you'd need for calculating failures/second or some other rate.  I'm working on the assumption that these failures should be fairly rare, and you're most interested in the fact that they're happening at all.
 
 Some possible enhancements:
- * Run from the host OS rather than the guest.
  * Add syslog or other logging facilities in addition to stdout.
