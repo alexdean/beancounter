@@ -1,19 +1,30 @@
 #!/usr/bin/python
-import os, time
+import os, time, subprocess
 from shutil import copy
 
 ### USER CONFIGURATION ###
 cur_file = '/proc/user_beancounters'
 prev_file = '/var/local/user_beancounters.prev'
-# cur_file = '/Users/alex/Code/backup/user_beancounters'
-# prev_file = '/Users/alex/Code/backup/user_beancounters.prev'
+# cur_file = '/Users/alex/Code/beancounter/user_beancounters'
+# prev_file = '/Users/alex/Code/beancounter/user_beancounters.prev'
 ##########################
 
 # Unlikely.  http://wiki.openvz.org/UBC_failcnt_reset
 class CounterResetError( Exception ):
   """Raised if current beancounter file has smaller failcnt values than previous file."""
 
-# read a user_beancounters file, and return a {'key':'failcnt'} dict.
+# convert numeric container ids to hostnames
+class VzList:
+  def __init__( self, input='' ):
+    if input == '':
+      input = subprocess.Popen( [ "vzlist" ], stdout=subprocess.PIPE ).communicate()[ 0 ]
+    lines = [ line.split() for line in input.split( "\n" ) ]
+    self.map = dict( [ ( line[0], line[4] ) for line in lines if len( line ) == 5 ] )
+
+  def hostname_for_ctid( self, ctid ):
+    return self.map[ ctid ]
+
+# read a user_beancounters file, and return a { 101:{'key':'failcnt'}, 102:{'key':'failcnt' } dict.
 def get_beancounter_failcnt( filename ):
   container = "unknown"
   values = {}
@@ -25,10 +36,12 @@ def get_beancounter_failcnt( filename ):
     # skip Version, header, and dummy rows
 
     if size == 7 and arr[ -6 ] != 'resource' :
-      container = arr[ -7 ]
+      # '101:' -> '101'
+      container = arr[ -7 ][ 0:-1 ]
+      values[ container ] = {}
 
     if ( size == 6 or size == 7 ) and arr[ -6 ] != 'resource' and arr[ -6 ] != 'dummy':
-      values[ container + arr[ -6 ] ] = arr[ -1 ]
+      values[ container ][ arr[ -6 ] ] = arr[ -1 ]
 
   return values
 
@@ -36,23 +49,31 @@ def get_beancounter_failcnt( filename ):
 # return dict with differences
 def beancounter_diff( prev, cur ):
   values = {}
-  keys = prev.keys()
-  for key in keys:
-    diff = int( cur[ key ] ) - int( prev[ key ] )
-    if diff > 0:
-      values[ key ] = diff
-    # if counter resets, value will be < 0
-    # no facility is provided for resetting counters individually. If 1 is reset, they all are.
-    elif diff < 0:
-      raise CounterResetError
+  ctids = prev.keys()
+  for ctid in ctids:
+    keys = prev[ ctid ].keys()
+    for key in keys:
+      diff = int( cur[ ctid ][ key ] ) - int( prev[ ctid ][ key ] )
+      if diff > 0:
+        if ctid not in values:
+          values[ ctid ] = {}
+        values[ ctid ][ key ] = diff
+      # if counter resets, value will be < 0
+      # no facility is provided for resetting counters individually. If 1 is reset, they all are.
+      elif diff < 0:
+        raise CounterResetError
+          
   return values
 
 def output( message ):
   print '%s : %s' % ( time.strftime( "%Y-%m-%d %H:%M:%S", time.localtime() ), message)
 
+vzlist = VzList()
+
 prev_values = {}
 try:
   prev_values = get_beancounter_failcnt( prev_file )
+  
 except IOError:
   # should only happen on initial run.
   output( "*** Previous-values file does not exist.  Creating. ***" )
@@ -64,14 +85,16 @@ if prev_values:
   except CounterResetError:
     output( "***  Counters were reset.  ***" )
   else:
-    keys = diffs.keys()
-    for key in keys:
-      output( "%(key)s %(diff)s %(prev)s -> %(cur)s" % {
-        'key' : key.rjust( 12 ),
-        'diff' : ( '+' + str( diffs[ key ] ) ).rjust( 8 ),
-        'prev': str( prev_values[ key ] ).rjust( 8 ),
-        'cur' : cur_values[ key ]
-      } )
+    ctids = diffs.keys()
+    for ctid in ctids:
+      for key in diffs[ ctid ]:
+        output( "%(ctid)s\t%(key)s\t%(diff)s\t%(prev)s -> %(cur)s" % {
+          'ctid' : vzlist.hostname_for_ctid( ctid ),
+          'key' : key,
+          'diff' : ( '+' + str( diffs[ ctid ][ key ] ) ),
+          'prev': str( prev_values[ ctid ][ key ] ),
+          'cur' : cur_values[ ctid ][ key ]
+        } )
 
 # cp new file to old file location
 copy( cur_file, prev_file )
