@@ -14,15 +14,22 @@ class CounterResetError( Exception ):
   """Raised if current beancounter file has smaller failcnt values than previous file."""
 
 # convert numeric container ids to hostnames
+# if conversion is not possible (vzlist not available), return ctid
 class VzList:
   def __init__( self, input='' ):
     if input == '':
-      input = subprocess.Popen( [ "/usr/sbin/vzlist" ], stdout=subprocess.PIPE ).communicate()[ 0 ]
+      try:
+        input = subprocess.Popen( [ "/usr/sbin/vzlist" ], stdout=subprocess.PIPE ).communicate()[ 0 ]
+      except OSError:
+        pass
     lines = [ line.split() for line in input.split( "\n" ) ]
     self.map = dict( [ ( line[0], line[4] ) for line in lines if len( line ) == 5 ] )
 
   def hostname_for_ctid( self, ctid ):
-    return self.map[ ctid ]
+    ret_val = ctid
+    if ctid in self.map
+      ret_val = self.map[ ctid ]
+    return ret_val
 
 # read a user_beancounters file, and return a { 101:{'key':'failcnt'}, 102:{'key':'failcnt' } dict.
 def get_beancounter_failcnt( filename ):

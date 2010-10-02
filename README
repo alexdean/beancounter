@@ -4,6 +4,8 @@ The script will examine the /proc/user_beancounters file and print any 'failcnt'
 
   * * * * * /usr/local/bin/beancount.py >> /var/log/beancount.log
 
+This has to be run as root, since a non-root user cannot read the user_beancounters file.  It works equally well when run from a guest OS or from a host OS.  If run from the host, you'll get monitoring of all guests.
+
 It doesn't track how long it's been since the last run, which you'd need for calculating failures/second or some other rate.  I'm working on the assumption that these failures should be fairly rare, and you're most interested in the fact that they're happening at all.
 
 Some possible enhancements:
