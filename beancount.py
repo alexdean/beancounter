@@ -27,7 +27,7 @@ class VzList:
 
   def hostname_for_ctid( self, ctid ):
     ret_val = ctid
-    if ctid in self.map
+    if ctid in self.map:
       ret_val = self.map[ ctid ]
     return ret_val
 
