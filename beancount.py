@@ -55,6 +55,10 @@ def get_beancounter_failcnt( filename ):
 # compare 2 dicts created by get_beancounter_failcnt.
 # return dict with differences
 def beancounter_diff( prev, cur ):
+  # TODO: assumes the list of containers always matches.  If a container is stopped/started this won't be true.
+  # should iterate cur.keys().  If a ctid isn't in prev, skip.  Will be available on next run.
+  # Log a "noticed new container" message?
+
   values = {}
   ctids = prev.keys()
   for ctid in ctids:
